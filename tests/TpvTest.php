@@ -18,7 +18,6 @@ class TpvTest extends PHPUnitTestCase
         $this->redsys = new Tpv();
         $reflection = new ReflectionClass(Tpv::class);
         $this->isEmptyMethod = $reflection->getMethod('isEmpty');
-        $this->isEmptyMethod->setAccessible(true);
     }
 
     /**
@@ -79,7 +78,9 @@ class TpvTest extends PHPUnitTestCase
     {
         $redsys = new Tpv();
         $redsys->setIdentifier();
-        $this->assertContains('REQUIRED', $redsys->getParameters());
+        $parameters = $redsys->getParameters();
+        $this->assertArrayHasKey('DS_MERCHANT_IDENTIFIER', $parameters);
+        $this->assertEquals('REQUIRED', $parameters['DS_MERCHANT_IDENTIFIER']);
     }
 
     public function booleanProvider()
@@ -716,7 +717,7 @@ class TpvTest extends PHPUnitTestCase
         $redsys->setMerchantCofIni($cofIni);
         $parameters = $redsys->getParameters();
         $this->assertArrayHasKey('DS_MERCHANT_COF_INI', $parameters);
-        $this->assertContains($parameters['DS_MERCHANT_COF_INI'], [$cofIni]);
+        $this->assertEquals($cofIni, $parameters['DS_MERCHANT_COF_INI']);
     }
 
     public function invalidSetMerchantCofIni()

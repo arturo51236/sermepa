@@ -19,3 +19,7 @@ vendor
 docker
 docker-compose.yml
 .env
+
+# Development scripts
+AGENTS.md
+test-docker.sh

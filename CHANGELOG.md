@@ -2,7 +2,24 @@
 
 All Notable changes to `Redsys` will be documented in this file
 
-## Version 1.5.2 (2025-03-07)
+## Version 1.5.3 (2026-02-22)
+
+### Added
+
+- Added support for PHP 8.3, 8.4 and 8.5
+- Added support for PHPUnit 10
+
+### Changed
+
+- Updated CI workflow to use GitHub Actions with PHP 8.2-8.5
+- Improved README with better documentation, tables and examples
+- Migrated phpunit.xml.dist to PHPUnit 10 schema
+- Updated composer.json with PHP 8.3-8.5 and PHPUnit 10 support
+
+### Fixed
+
+- Fixed test assertions for PHPUnit 10 compatibility
+- Removed deprecated ReflectionMethod::setAccessible() call (PHP 8.5 compatibility)
 
 ### Added
 
