@@ -2,6 +2,43 @@
 
 All Notable changes to `Redsys` will be documented in this file
 
+## Version 1.6.0 (2026-03-08)
+
+### Added
+
+- Added InSite integration - embedded payment form via iframe (complete implementation)
+- Added new environments: `insiteSandbox`, `insiteLive`, `insiteRestSandbox`, `insiteRestLive`
+- Added `createInSiteForm()` method with full parameter support:
+  - Container ID customization
+  - CSS styles for button, body, box, and inputs
+  - Button text (HTML encoded)
+  - Language selection (SIS codes and ISO 639-1)
+  - Logo visibility toggle
+  - Reduced style option
+  - InSite style modes: 'inline' or 'twoRows'
+- Added `createInSiteFormJSON()` method - JSON-based configuration (recommended)
+- Added `sendInSite()` method - executes payment with operation ID
+- Added `setInSite()` method - enables/disables InSite mode
+- Added `getInSiteMode()` method - gets InSite mode status
+- Added `getInSiteJsUrl()` method - gets InSite JavaScript URL
+- Added InSite constants in `MerchantEnvironment`:
+  - `INSITE_SANDBOX`, `INSITE_LIVE`, `INSITE_REST_SANDBOX`, `INSITE_REST_LIVE`
+  - `INSITE_JS_SANDBOX`, `INSITE_JS_LIVE`
+- Added `MerchantInsiteLanguage` class - language codes for InSite forms
+- Added `MerchantInsiteError` class - error codes and descriptions for InSite validation
+- Added `MerchantInsiteStyle` class - style constants (inline, twoRows)
+- Added comprehensive InSite documentation with examples
+
+### Changed
+
+- Updated `setEnvironment()` to support InSite environments
+- Updated `createInSiteForm()` to require terminal parameter (as per Redsys docs)
+- Updated README with complete InSite documentation per official Redsys documentation
+
+### Fixed
+
+- None
+
 ## Version 1.5.3 (2026-02-22)
 
 ### Added

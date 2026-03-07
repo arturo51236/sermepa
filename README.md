@@ -52,6 +52,10 @@ echo $redsys->createForm();
 | `live` | Producción |
 | `restTest` | API REST Pruebas |
 | `restLive` | API REST Producción |
+| `insiteSandbox` | InSite Pruebas (JS + REST) |
+| `insiteLive` | InSite Producción (JS + REST) |
+| `insiteRestSandbox` | InSite REST Pruebas (solo pago) |
+| `insiteRestLive` | InSite REST Producción (solo pago) |
 
 ## Métodos de Pago
 
@@ -233,6 +237,214 @@ try {
 }
 ```
 
+## InSite (Pago Embebido)
+
+InSite permite incrustar el formulario de pago directamente en tu página web mediante un **iframe**, sin redirigir al usuario a la pasarela de Redsys. Los datos de tarjeta nunca pasan por tu servidor (cumplimiento PCI DSS).
+
+> **Nota:** Tu dominio debe estar registrado en Redsys para usar InSite. Configura los dominios permitidos en el Portal de Administración del TPV Virtual. Contacta con tu banco o soporte de Redsys.
+
+### Flujo de Integración
+
+1. **Generar formulario InSite** - Renderiza el iframe en tu página
+2. **Usuario completa pago** - Introduce datos en el iframe de Redsys
+3. **Obtener ID de operación** - Redsys retorna un `idOper` (válido por 30 minutos)
+4. **Ejecutar pago** - Envía el `idOper` mediante REST API
+
+### Paso 1: Generar Formulario InSite (Modo Unificado)
+
+El modo unificado genera un iframe completo con todos los campos de pago:
+
+```php
+use Sermepa\Tpv\Tpv;
+use Redsys\Merchant\MerchantInsiteLanguage;
+
+$redsys = new Tpv();
+$redsys->setEnvironment('insiteSandbox')  // o 'insiteLive' para producción
+    ->setOrder('1234AB')
+    ->setMerchantcode('999008881')        // Tu código de comercio (FUC)
+    ->setTerminal('1');
+
+// Generar HTML del formulario InSite
+$htmlForm = $redsys->createInSiteForm(
+    'card-form',              // ID del contenedor
+    'background: #007bff;',   // Estilo del botón
+    'color: white;',          // Estilo del cuerpo
+    'padding: 10px;',         // Estilo de la caja de datos
+    'font-size: 14px;',       // Estilo de los inputs
+    'Pagar',                  // Texto del botón (HTML encoded: 'Bot&#243;n' para Botón)
+    MerchantInsiteLanguage::ISO_ES, // Idioma: 'ES', '1', etc.
+    true,                     // Mostrar logo de entidad
+    false,                    // Estilo reducido
+    'inline'                  // Estilo InSite: 'inline' o 'twoRows'
+);
+
+echo $htmlForm;
+```
+
+### Modo JSON (Recomendado)
+
+Para mayor flexibilidad, usa el método JSON:
+
+```php
+$htmlForm = $redsys->createInSiteFormJSON([
+    'id' => 'card-form',
+    'fuc' => '999008881',
+    'terminal' => '1',
+    'order' => '1234AB',
+    'styleButton' => 'background: #007bff; color: white;',
+    'styleBody' => 'font-family: Arial;',
+    'styleBox' => 'padding: 10px;',
+    'buttonValue' => 'Pagar ahora',
+    'idiomaInsite' => 'ES',
+    'mostrarLogoInsite' => true,
+    'estiloReducidoInsite' => false,
+    'estiloInsite' => 'inline'  // o 'twoRows'
+]);
+```
+
+### Parámetros del Formulario
+
+| Parámetro | Obligatorio | Descripción |
+|-----------|-------------|-------------|
+| `id` / `$containerId` | Sí | ID del contenedor div |
+| `fuc` / merchantCode | Sí | Código de comercio (FUC) |
+| `terminal` | Sí | Número de terminal |
+| `order` | Sí | Número de pedido (4-12 caracteres) |
+| `styleButton` | No | CSS para el botón de pago |
+| `styleBody` | No | CSS para el cuerpo del formulario |
+| `styleBox` | No | CSS para la caja de datos |
+| `styleBoxText` | No | CSS para el texto de los inputs |
+| `buttonValue` | No | Texto del botón (HTML encoded) |
+| `idiomaInsite` | No | Código de idioma (ver tabla) |
+| `mostrarLogoInsite` | No | Mostrar logo de entidad (default: true) |
+| `estiloReducidoInsite` | No | Usar estilo reducido (default: false) |
+| `estiloInsite` | No | 'inline' o 'twoRows' (default: 'inline') |
+
+### Catálogo de Idiomas InSite
+
+| Idioma | Código SIS | ISO 639-1 |
+|--------|------------|-----------|
+| Español | 1 | ES |
+| Inglés | 2 | EN |
+| Catalán | 3 | CA |
+| Francés | 4 | FR |
+| Alemán | 5 | DE |
+| Italiano | 7 | IT |
+| Portugués | 9 | PT |
+| ... | ... | ... |
+
+Usa las constantes de `MerchantInsiteLanguage`:
+
+```php
+use Redsys\Merchant\MerchantInsiteLanguage;
+
+$redsys->createInSiteForm(..., MerchantInsiteLanguage::SPANISH, ...);
+// o
+$redsys->createInSiteForm(..., MerchantInsiteLanguage::ISO_ES, ...);
+```
+
+### Paso 2: Recibir ID de Operación
+
+El formulario incluye automáticamente un listener que almacena el `idOper` en un campo hidden:
+
+```html
+<input type="hidden" id="token" name="token" value="">
+<input type="hidden" id="errorCode" name="errorCode" value="">
+```
+
+Puedes personalizar la validación:
+
+```javascript
+function merchantValidation() {
+    // Tu validación personalizada
+    return true;  // true para continuar, false para cancelar
+}
+
+window.addEventListener("message", function receiveMessage(event) {
+    storeIdOper(event, "token", "errorCode", merchantValidation);
+});
+```
+
+### Códigos de Error InSite
+
+| Código | Descripción |
+|--------|-------------|
+| msg1 | Ha de rellenar los datos de la tarjeta |
+| msg2 | La tarjeta es obligatoria |
+| msg3 | La tarjeta ha de ser numérica |
+| msg15 | La longitud de la tarjeta no es correcta |
+| msg16 | Debe introducir un número de tarjeta válido |
+| msg17 | Validación incorrecta por parte del comercio |
+| msg18 | Error de inicialización de dominio |
+
+Usa `MerchantInsiteError` para obtener descripciones:
+
+```php
+use Redsys\Merchant\MerchantInsiteError;
+
+$errorDescription = MerchantInsiteError::getDescription('msg1');
+```
+
+### Paso 3: Ejecutar Pago con ID de Operación
+
+```php
+use Sermepa\Tpv\Tpv;
+use Sermepa\Tpv\TpvException;
+
+try {
+    $key = 'TU_CLAVE_SECRETA';
+    $idOper = $_POST['token'];    // ID recibido del iframe
+    $order = '1234AB';             // Mismo pedido usado en el formulario
+
+    $redsys = new Tpv();
+    $redsys->setEnvironment('insiteRestLive')  // o 'insiteRestSandbox'
+        ->setAmount(2500)
+        ->setOrder($order)          // DEBE ser el mismo que en createInSiteForm
+        ->setMerchantcode('999008881')
+        ->setCurrency('978')
+        ->setTransactiontype('0')
+        ->setTerminal('1');
+
+    // Ejecutar pago con el ID de operación
+    $response = json_decode($redsys->sendInSite($idOper, $key), true);
+
+    // Decodificar respuesta
+    $parameters = $redsys->getMerchantParameters($response['Ds_MerchantParameters']);
+    $DsResponse = (int) $parameters['Ds_Response'];
+
+    if ($DsResponse >= 0 && $DsResponse <= 99) {
+        // Pago aprobado
+    } else {
+        // Pago denegado
+    }
+    }
+
+} catch (TpvException $e) {
+    echo 'Error TPV: ' . $e->getMessage();
+}
+```
+
+### Métodos InSite
+
+| Método | Descripción |
+|--------|-------------|
+| `setInSite(bool)` | Habilitar/deshabilitar modo InSite |
+| `getInSiteMode()` | Obtener estado del modo InSite |
+| `getInSiteJsUrl()` | Obtener URL del JavaScript de InSite |
+| `createInSiteForm(string $containerId, string $buttonStyle, string $bodyStyle)` | Generar HTML del formulario embebido |
+| `sendInSite(string $idOper, string $key)` | Ejecutar pago con ID de operación |
+
+### Personalización del Formulario
+
+```php
+// Generar formulario con estilos personalizados
+$html = $redsys->createInSiteForm(
+    'card-form',                                    // ID del contenedor
+    'background-color: #28a745; color: white; padding: 15px; border: none; border-radius: 5px;',  // Estilo botón
+    'font-family: Arial, sans-serif;'               // Estilo cuerpo
+);
+```
+
 ## Redirección Automática
 
 Para redirección automática sin mostrar el botón:
@@ -354,6 +566,32 @@ Los códigos ISO 4217. Los más comunes:
 |--------|-------------|
 | `check(string $key, array $postData)` | Valida firma de respuesta del banco |
 | `getMerchantParameters(string)` | Decodifica `Ds_MerchantParameters` |
+
+### Métodos InSite
+
+| Método | Descripción |
+|--------|-------------|
+| `setInSite(bool)` | Habilitar modo InSite |
+| `getInSiteMode()` | Obtener estado del modo InSite |
+| `getInSiteJsUrl()` | Obtener URL del JavaScript de InSite |
+| `createInSiteForm(...)` | Genera formulario embebido (modo unificado) |
+| `createInSiteFormJSON(array)` | Genera formulario embebido (modo JSON) |
+| `sendInSite(string $idOper, string $key)` | Ejecuta pago con ID de operación |
+
+#### Parámetros de createInSiteForm()
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+|-----------|------|-------------|-------------|
+| `$containerId` | string | No | ID del contenedor div (default: 'card-form') |
+| `$buttonStyle` | string | No | CSS para el botón de pago |
+| `$bodyStyle` | string | No | CSS para el cuerpo del formulario |
+| `$boxStyle` | string | No | CSS para la caja de datos |
+| `$inputStyle` | string | No | CSS para los inputs |
+| `$buttonText` | string | No | Texto del botón (HTML encoded) |
+| `$language` | string | No | Código de idioma (default: 'ES') |
+| `$showLogo` | bool | No | Mostrar logo de entidad (default: true) |
+| `$reducedStyle` | bool | No | Usar estilo reducido (default: false) |
+| `$insiteStyle` | string | No | 'inline' o 'twoRows' (default: 'inline') |
 
 ### Métodos Auxiliares
 

@@ -24,6 +24,10 @@ class Tpv
     protected $_setStyleSubmit;
     protected $_setClassSubmit;
     protected $_setSignature;
+    
+    // InSite properties
+    protected $_setInSiteMode = false;
+    protected $_setInSiteJsUrl = '';
 
     /**
      * Constructor
@@ -449,6 +453,22 @@ class Tpv
         } elseif ($environment === 'startRequestRestTest') {
             //Start request test
             $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST';
+        } elseif ($environment === 'insiteSandbox') {
+            //InSite Sandbox - JS URL
+            $this->_setInSiteJsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
+            $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST';
+        } elseif ($environment === 'insiteLive') {
+            //InSite Live - JS URL
+            $this->_setInSiteJsUrl = 'https://sis.redsys.es/sis/NC/redsysV3.js';
+            $this->_setEnvironment = 'https://sis.redsys.es/sis/rest/iniciaPeticionREST';
+        } elseif ($environment === 'insiteRestSandbox') {
+            //InSite REST Sandbox (for sendInSite)
+            $this->_setInSiteJsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
+            $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST';
+        } elseif ($environment === 'insiteRestLive') {
+            //InSite REST Live (for sendInSite)
+            $this->_setInSiteJsUrl = 'https://sis.redsys.es/sis/NC/redsysV3.js';
+            $this->_setEnvironment = 'https://sis.redsys.es/sis/rest/trataPeticionREST';
         } else {
             throw new TpvException('Add test or live');
         }
@@ -1207,4 +1227,263 @@ class Tpv
     }
 
     // ******** END UTILS ********
+
+    /************* INSITE METHODS ************* */
+
+    /**
+     * Enable or disable InSite mode
+     *
+     * @param bool $enabled
+     *
+     * @return $this
+     */
+    public function setInSite(bool $enabled = true)
+    {
+        $this->_setInSiteMode = $enabled;
+
+        return $this;
+    }
+
+    /**
+     * Get InSite mode status
+     *
+     * @return bool
+     */
+    public function getInSiteMode(): bool
+    {
+        return $this->_setInSiteMode;
+    }
+
+    /**
+     * Get InSite JavaScript URL
+     *
+     * @return string
+     */
+    public function getInSiteJsUrl(): string
+    {
+        return $this->_setInSiteJsUrl;
+    }
+
+    /**
+     * Generate InSite form HTML with embedded iframe (unified mode)
+     *
+     * According to Redsys InSite documentation, this generates an iframe with all payment fields.
+     *
+     * @param string $containerId    ID for the container div (default: 'card-form')
+     * @param string $buttonStyle    CSS style for the submit button
+     * @param string $bodyStyle      CSS style for the form body
+     * @param string $boxStyle       CSS style for the data input box
+     * @param string $inputStyle     CSS style for the input fields
+     * @param string $buttonText     Text for the pay button (HTML encoded, e.g., 'Pagar' or 'Bot&#243;n')
+     * @param string $language       Language code (1=ES, 2=EN, 3=CA, etc.) or ISO 639-1 (ES, EN, CA)
+     * @param bool   $showLogo       Show entity logo (default: true)
+     * @param bool   $reducedStyle   Use reduced width style (default: false)
+     * @param string $insiteStyle    InSite style: 'inline' or 'twoRows' (default: 'inline')
+     *
+     * @return string HTML with script and container
+     * @throws TpvException
+     */
+    public function createInSiteForm(
+        string $containerId = 'card-form',
+        string $buttonStyle = '',
+        string $bodyStyle = '',
+        string $boxStyle = '',
+        string $inputStyle = '',
+        string $buttonText = 'Pagar',
+        string $language = 'ES',
+        bool   $showLogo = true,
+        bool   $reducedStyle = false,
+        string $insiteStyle = 'inline'
+    ): string {
+        // Validate required parameters
+        if (!isset($this->_setParameters['DS_MERCHANT_MERCHANTCODE'])) {
+            throw new TpvException('Merchant code (FUC) is required for InSite');
+        }
+        if (!isset($this->_setParameters['DS_MERCHANT_TERMINAL'])) {
+            throw new TpvException('Terminal is required for InSite');
+        }
+        if (!isset($this->_setParameters['DS_MERCHANT_ORDER'])) {
+            throw new TpvException('Order is required for InSite');
+        }
+
+        $jsUrl = $this->_setInSiteJsUrl;
+        if (empty($jsUrl)) {
+            $jsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
+        }
+
+        $fuc = $this->_setParameters['DS_MERCHANT_MERCHANTCODE'];
+        $terminal = $this->_setParameters['DS_MERCHANT_TERMINAL'];
+        $order = $this->_setParameters['DS_MERCHANT_ORDER'];
+
+        // Build the getInSiteForm JavaScript call
+        $showLogoJs = $showLogo ? 'true' : 'false';
+        $reducedStyleJs = $reducedStyle ? 'true' : 'false';
+        $insiteStyleJs = in_array($insiteStyle, ['inline', 'twoRows']) ? $insiteStyle : 'inline';
+
+        $form = '<script src="' . $jsUrl . '"></script>
+<div id="' . $containerId . '"></div>
+<form name="datos" id="datos" method="post" target="_self">
+    <input type="hidden" id="token" name="token" value="">
+    <input type="hidden" id="errorCode" name="errorCode" value="">
+</form>
+<script>
+function merchantValidation(){
+    // Add custom validations here
+    return true;
+}
+function loadRedsysForm(){
+    getInSiteForm(
+        \'' . $containerId . '\',
+        \'' . $buttonStyle . '\',
+        \'' . $bodyStyle . '\',
+        \'' . $boxStyle . '\',
+        \'' . $inputStyle . '\',
+        \'' . $buttonText . '\',
+        \'' . $fuc . '\',
+        \'' . $terminal . '\',
+        \'' . $order . '\',
+        \'' . $language . '\',
+        ' . $showLogoJs . ',
+        ' . $reducedStyleJs . ',
+        \'' . $insiteStyleJs . '\'
+    );
+}
+window.addEventListener("message", function receiveMessage(event) {
+    storeIdOper(event, "token", "errorCode", merchantValidation);
+});
+window.onload = loadRedsysForm;
+</script>';
+
+        return $form;
+    }
+
+    /**
+     * Generate InSite form HTML using JSON configuration (recommended)
+     *
+     * This method provides more flexibility by accepting a configuration array.
+     *
+     * @param array $options Configuration options:
+     *   - 'id' (required): Container ID
+     *   - 'fuc' (required): Merchant code
+     *   - 'terminal' (required): Terminal number
+     *   - 'order' (required): Order number
+     *   - 'styleButton': CSS for button
+     *   - 'styleBody': CSS for body
+     *   - 'styleBox': CSS for input box
+     *   - 'styleBoxText': CSS for input text
+     *   - 'buttonValue': Button text
+     *   - 'idiomaInsite': Language code
+     *   - 'mostrarLogoInsite': Show logo (true/false)
+     *   - 'estiloReducidoInsite': Reduced style (true/false)
+     *   - 'estiloInsite': 'inline' or 'twoRows'
+     *
+     * @return string HTML with script and container
+     * @throws TpvException
+     */
+    public function createInSiteFormJSON(array $options): string
+    {
+        // Validate required options
+        if (empty($options['id'])) {
+            throw new TpvException('Container ID is required for InSite');
+        }
+        if (empty($options['fuc'])) {
+            throw new TpvException('Merchant code (FUC) is required for InSite');
+        }
+        if (empty($options['terminal'])) {
+            throw new TpvException('Terminal is required for InSite');
+        }
+        if (empty($options['order'])) {
+            throw new TpvException('Order is required for InSite');
+        }
+
+        $jsUrl = $this->_setInSiteJsUrl;
+        if (empty($jsUrl)) {
+            $jsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
+        }
+
+        // Build JSON config
+        $config = [
+            'id' => $options['id'],
+            'fuc' => $options['fuc'],
+            'terminal' => $options['terminal'],
+            'order' => $options['order']
+        ];
+
+        // Optional parameters
+        if (isset($options['styleButton'])) {
+            $config['styleButton'] = $options['styleButton'];
+        }
+        if (isset($options['styleBody'])) {
+            $config['styleBody'] = $options['styleBody'];
+        }
+        if (isset($options['styleBox'])) {
+            $config['styleBox'] = $options['styleBox'];
+        }
+        if (isset($options['styleBoxText'])) {
+            $config['styleBoxText'] = $options['styleBoxText'];
+        }
+        if (isset($options['buttonValue'])) {
+            $config['buttonValue'] = $options['buttonValue'];
+        }
+        if (isset($options['idiomaInsite'])) {
+            $config['idiomaInsite'] = $options['idiomaInsite'];
+        }
+        if (isset($options['mostrarLogoInsite'])) {
+            $config['mostrarLogoInsite'] = $options['mostrarLogoInsite'];
+        }
+        if (isset($options['estiloReducidoInsite'])) {
+            $config['estiloReducidoInsite'] = $options['estiloReducidoInsite'];
+        }
+        if (isset($options['estiloInsite'])) {
+            $config['estiloInsite'] = $options['estiloInsite'];
+        }
+
+        $jsonConfig = json_encode($config);
+
+        $form = '<script src="' . $jsUrl . '"></script>
+<div id="' . $options['id'] . '"></div>
+<form name="datos" id="datos" method="post" target="_self">
+    <input type="hidden" id="token" name="token" value="">
+    <input type="hidden" id="errorCode" name="errorCode" value="">
+</form>
+<script>
+function merchantValidation(){
+    return true;
+}
+function loadRedsysForm(){
+    var insiteJSON = ' . $jsonConfig . ';
+    getInSiteFormJSON(insiteJSON);
+}
+window.addEventListener("message", function receiveMessage(event) {
+    storeIdOper(event, "token", "errorCode", merchantValidation);
+});
+window.onload = loadRedsysForm;
+</script>';
+
+        return $form;
+    }
+
+    /**
+     * Execute InSite payment with operation ID
+     *
+     * @param string $idOper  Operation ID obtained from InSite form
+     * @param string $key     Merchant key
+     *
+     * @return string
+     * @throws TpvException
+     */
+    public function sendInSite(string $idOper, string $key): string
+    {
+        if (empty($idOper)) {
+            throw new TpvException('Operation ID is required for InSite payment');
+        }
+
+        // Set the operation ID instead of card data
+        $this->_setParameters['DS_MERCHANT_IDOPER'] = $idOper;
+
+        // Generate signature for the request
+        $this->generateMerchantSignature($key);
+
+        return $this->send();
+    }
 }

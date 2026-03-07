@@ -813,4 +813,267 @@ class TpvTest extends PHPUnitTestCase
         // Call the createOrderNumber method with an invalid input
         $this->redsys->createOrderNumber($input);
     }
+
+    /************* INSITE TESTS ************* */
+
+    /**
+     * Data provider for InSite environment URLs
+     *
+     * @return array
+     */
+    public function insiteEnvironmentsProvider()
+    {
+        return [
+            'insiteSandbox' => [
+                'insiteSandbox',
+                'sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js',
+                'sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST'
+            ],
+            'insiteLive' => [
+                'insiteLive',
+                'sis.redsys.es/sis/NC/redsysV3.js',
+                'sis.redsys.es/sis/rest/iniciaPeticionREST'
+            ],
+            'insiteRestSandbox' => [
+                'insiteRestSandbox',
+                'sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js',
+                'sis-t.redsys.es:25443/sis/rest/trataPeticionREST'
+            ],
+            'insiteRestLive' => [
+                'insiteRestLive',
+                'sis.redsys.es/sis/NC/redsysV3.js',
+                'sis.redsys.es/sis/rest/trataPeticionREST'
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider insiteEnvironmentsProvider
+     */
+    public function setEnvironment_insite_configures_correct_urls($env, $expectedJsUrl, $expectedRestUrl)
+    {
+        $redsys = new Tpv();
+        $redsys->setEnvironment($env);
+        
+        $this->assertStringContainsString($expectedJsUrl, $redsys->getInSiteJsUrl());
+        $this->assertStringContainsString($expectedRestUrl, $redsys->getEnvironment());
+    }
+
+    /**
+     * @test
+     */
+    public function setInSite_enables_insite_mode()
+    {
+        $redsys = new Tpv();
+        $this->assertFalse($redsys->getInSiteMode());
+        
+        $redsys->setInSite(true);
+        $this->assertTrue($redsys->getInSiteMode());
+        
+        $redsys->setInSite(false);
+        $this->assertFalse($redsys->getInSiteMode());
+    }
+
+    /**
+     * @test
+     */
+    public function createInSiteForm_generates_html_with_script_tag()
+    {
+        $redsys = new Tpv();
+        $redsys->setEnvironment('insiteSandbox')
+            ->setOrder('1234')
+            ->setMerchantcode('999008881')
+            ->setTerminal('1');
+        
+        $form = $redsys->createInSiteForm();
+        
+        $this->assertStringContainsString('<script', $form);
+        $this->assertStringContainsString('redsysV3.js', $form);
+        $this->assertStringContainsString('getInSiteForm', $form);
+        $this->assertStringContainsString("'999008881'", $form); // FUC
+        $this->assertStringContainsString("'1'", $form); // Terminal
+        $this->assertStringContainsString("'1234'", $form); // Order
+    }
+
+    /**
+     * @test
+     */
+    public function createInSiteForm_generates_div_with_container_id()
+    {
+        $redsys = new Tpv();
+        $redsys->setEnvironment('insiteSandbox')
+            ->setOrder('1234')
+            ->setMerchantcode('999008881')
+            ->setTerminal('1');
+        
+        $form = $redsys->createInSiteForm('my-payment-form');
+        
+        $this->assertStringContainsString('id="my-payment-form"', $form);
+    }
+
+    /**
+     * @test
+     */
+    public function createInSiteForm_includes_all_parameters()
+    {
+        $redsys = new Tpv();
+        $redsys->setEnvironment('insiteSandbox')
+            ->setOrder('1234AB')
+            ->setMerchantcode('999008881')
+            ->setTerminal('1');
+        
+        $form = $redsys->createInSiteForm(
+            'card-form',
+            'background: blue;',
+            'color: white;',
+            'padding: 10px;',
+            'font-size: 14px;',
+            'Pagar',
+            'ES',
+            true,
+            false,
+            'inline'
+        );
+        
+        $this->assertStringContainsString("'card-form'", $form);
+        $this->assertStringContainsString("'background: blue;'", $form);
+        $this->assertStringContainsString("'color: white;'", $form);
+        $this->assertStringContainsString("'padding: 10px;'", $form);
+        $this->assertStringContainsString("'font-size: 14px;'", $form);
+        $this->assertStringContainsString("'Pagar'", $form);
+        $this->assertStringContainsString("'ES'", $form);
+        $this->assertStringContainsString("'999008881'", $form);
+        $this->assertStringContainsString("'1234AB'", $form);
+    }
+
+    /**
+     * Data provider for required parameter validation
+     *
+     * @return array
+     */
+    public function insiteRequiredParamsProvider()
+    {
+        return [
+            'without terminal' => [
+                'Terminal is required for InSite',
+                ['order' => '1234', 'merchantcode' => '999008881']
+            ],
+            'without order' => [
+                'Order is required for InSite',
+                ['merchantcode' => '999008881', 'terminal' => '1']
+            ],
+            'without merchant code' => [
+                'Merchant code (FUC) is required for InSite',
+                ['order' => '1234', 'terminal' => '1']
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider insiteRequiredParamsProvider
+     */
+    public function createInSiteForm_throws_exception_without_required_params($expectedMessage, $params)
+    {
+        $this->expectException(\Sermepa\Tpv\TpvException::class);
+        $this->expectExceptionMessage($expectedMessage);
+        
+        $redsys = new Tpv();
+        $redsys->setEnvironment('insiteSandbox');
+        
+        if (isset($params['order'])) {
+            $redsys->setOrder($params['order']);
+        }
+        if (isset($params['merchantcode'])) {
+            $redsys->setMerchantcode($params['merchantcode']);
+        }
+        if (isset($params['terminal'])) {
+            $redsys->setTerminal($params['terminal']);
+        }
+        
+        $redsys->createInSiteForm();
+    }
+
+    /**
+     * @test
+     */
+    public function createInSiteFormJSON_generates_html_with_json_config()
+    {
+        $redsys = new Tpv();
+        $redsys->setEnvironment('insiteSandbox');
+        
+        $form = $redsys->createInSiteFormJSON([
+            'id' => 'card-form',
+            'fuc' => '999008881',
+            'terminal' => '1',
+            'order' => '1234AB',
+            'idiomaInsite' => 'ES',
+            'estiloInsite' => 'inline'
+        ]);
+        
+        $this->assertStringContainsString('<script', $form);
+        $this->assertStringContainsString('redsysV3.js', $form);
+        $this->assertStringContainsString('getInSiteFormJSON', $form);
+        $this->assertStringContainsString('"fuc":"999008881"', $form);
+        $this->assertStringContainsString('"terminal":"1"', $form);
+        $this->assertStringContainsString('"order":"1234AB"', $form);
+    }
+
+    /**
+     * @test
+     */
+    public function createInSiteFormJSON_throws_exception_without_fuc()
+    {
+        $this->expectException(\Sermepa\Tpv\TpvException::class);
+        $this->expectExceptionMessage('Merchant code (FUC) is required for InSite');
+        
+        $redsys = new Tpv();
+        $redsys->createInSiteFormJSON([
+            'id' => 'card-form',
+            'terminal' => '1',
+            'order' => '1234'
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function sendInSite_throws_exception_with_empty_idoper()
+    {
+        $this->expectException(\Sermepa\Tpv\TpvException::class);
+        $this->expectExceptionMessage('Operation ID is required for InSite payment');
+        
+        $redsys = new Tpv();
+        $redsys->setEnvironment('insiteRestSandbox')
+            ->setAmount(100)
+            ->setOrder('1234')
+            ->setMerchantcode('999008881')
+            ->setCurrency('978')
+            ->setTransactiontype('0')
+            ->setTerminal('1')
+            ->sendInSite('', 'test_key');
+    }
+
+    /**
+     * @test
+     */
+    public function getInSiteJsUrl_returns_js_url()
+    {
+        $redsys = new Tpv();
+        $redsys->setEnvironment('insiteSandbox');
+        
+        $this->assertStringContainsString('redsysV3.js', $redsys->getInSiteJsUrl());
+    }
+
+    /**
+     * @test
+     */
+    public function getInSiteJsUrl_returns_empty_when_not_set()
+    {
+        $redsys = new Tpv();
+        $redsys->setEnvironment('test');
+        
+        $this->assertEmpty($redsys->getInSiteJsUrl());
+    }
 }
