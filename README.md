@@ -83,6 +83,15 @@ echo $redsys->createForm();
 | `8` | Confirmación preautorización extendida |
 | `9` | Baja de preautorización extendida |
 
+## Versiones de Firma
+
+La biblioteca soporta diferentes versiones de algoritmos de firma. Configura la versión mediante `setVersion()`:
+
+| Versión | Algoritmo de Cifrado | Algoritmo de Hash | Descripción |
+|---------|---------------------|-------------------|-------------|
+| `HMAC_SHA256_V1` | DES-EDE3-CBC | HMAC-SHA256 | **Por defecto**. Versión estándar compatible con la mayoría de TPVs |
+| `HMAC_SHA512_V2` | AES-128-CBC | HMAC-SHA512 | Versión mejorada con mayor seguridad criptográfica |
+
 ## Códigos de Respuesta
 
 El banco devuelve un código en `Ds_Response`. Los principales:
