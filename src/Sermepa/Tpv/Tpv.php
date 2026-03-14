@@ -378,10 +378,21 @@ class Tpv
         $key = $this->decodeBase64($key);
         //Generate Merchant Parameters
         $merchant_parameter = $this->generateMerchantParameters();
-        // Get key with Order and key
-        $key = $this->encrypt_3DES($this->getOrder(), $key);
-        // Generated Hmac256 of Merchant Parameter
-        $result = $this->hmac256($merchant_parameter, $key);
+
+        // Get key with Order and key based on version
+        switch ($this->_setVersion) {
+            case 'HMAC_SHA512_V2':
+                $key = $this->encrypt_AES($this->getOrder(), $key);
+                // Generated Hmac512 of Merchant Parameter
+                $result = $this->mac512($merchant_parameter, $key);
+                break;
+            case 'HMAC_SHA256_V1':
+            default:
+                $key = $this->encrypt_3DES($this->getOrder(), $key);
+                // Generated Hmac256 of Merchant Parameter
+                $result = $this->hmac256($merchant_parameter, $key);
+                break;
+        }
 
         // Base64 encoding
         return $this->encodeBase64($result);
@@ -404,9 +415,20 @@ class Tpv
         $parameters = $this->JsonToArray($decode);
         $order = $this->getOrderNotification($parameters);
 
-        $key = $this->encrypt_3DES($order, $key);
-        // Generated Hmac256 of Merchant Parameter
-        $result = $this->hmac256($data, $key);
+        // Get key with Order and key based on version
+        switch ($this->_setVersion) {
+            case 'HMAC_SHA512_V2':
+                $key = $this->encrypt_AES($order, $key);
+                // Generated Hmac512 of Merchant Parameter
+                $result = $this->mac512($data, $key);
+                break;
+            case 'HMAC_SHA256_V1':
+            default:
+                $key = $this->encrypt_3DES($order, $key);
+                // Generated Hmac256 of Merchant Parameter
+                $result = $this->hmac256($data, $key);
+                break;
+        }
 
         return $this->base64_url_encode($result);
     }
@@ -1102,6 +1124,19 @@ class Tpv
     }
 
     /**
+     * Generate sha512
+     *
+     * @param string $data
+     * @param string $key
+     *
+     * @return string
+     */
+    protected function mac512($data, $key)
+    {
+        return hash_hmac('sha512', $data, $key, true);
+    }
+
+    /**
      * Encrypt to 3DES
      *
      * @param string $data Data for encrypt
@@ -1119,6 +1154,22 @@ class Tpv
         }
 
         return openssl_encrypt($data_padded, "DES-EDE3-CBC", $key, OPENSSL_RAW_DATA | OPENSSL_NO_PADDING, $iv);
+    }
+
+    /**
+     * Encrypt to AES
+     *
+     * @param string $data Data for encrypt
+     * @param string $key  Key
+     *
+     * @return string
+     */
+    protected function encrypt_AES($data, $key)
+    {
+        $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+        $fixed_key = str_pad(substr($key, 0, 16), 16, "0");
+
+        return openssl_encrypt($data, "AES-128-CBC", $fixed_key, OPENSSL_RAW_DATA, $iv);
     }
 
     /**
