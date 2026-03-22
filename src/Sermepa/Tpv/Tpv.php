@@ -13,21 +13,21 @@ class Tpv
     CONST READ_TIMEOUT = 120;
     CONST SSLVERSION_TLSv1_2 = 6;
 
-    protected $_setEnvironment;
-    protected $_setNameForm;
-    protected $_setIdForm;
-    protected $_setParameters;
-    protected $_setVersion;
-    protected $_setNameSubmit;
-    protected $_setIdSubmit;
-    protected $_setValueSubmit;
-    protected $_setStyleSubmit;
-    protected $_setClassSubmit;
-    protected $_setSignature;
+    protected $environment;
+    protected $nameForm;
+    protected $idForm;
+    protected $parameters;
+    protected $version;
+    protected $nameSubmit;
+    protected $idSubmit;
+    protected $valueSubmit;
+    protected $styleSubmit;
+    protected $classSubmit;
+    protected $signature;
     
     // InSite properties
-    protected $_setInSiteMode = false;
-    protected $_setInSiteJsUrl = '';
+    protected $inSiteMode = false;
+    protected $inSiteJsUrl = '';
 
     /**
      * Constructor
@@ -36,15 +36,15 @@ class Tpv
     {
         $this->setEnvironment();
 
-        $this->_setParameters = array();
-        $this->_setVersion = 'HMAC_SHA256_V1';
-        $this->_setNameForm = 'redsys_form';
-        $this->_setIdForm = 'redsys_form';
-        $this->_setNameSubmit = 'btn_submit';
-        $this->_setIdSubmit = 'btn_submit';
-        $this->_setValueSubmit = 'Send';
-        $this->_setStyleSubmit = '';
-        $this->_setClassSubmit = '';
+        $this->parameters = array();
+        $this->version = 'HMAC_SHA256_V1';
+        $this->nameForm = 'redsys_form';
+        $this->idForm = 'redsys_form';
+        $this->nameSubmit = 'btn_submit';
+        $this->idSubmit = 'btn_submit';
+        $this->valueSubmit = 'Send';
+        $this->styleSubmit = '';
+        $this->classSubmit = '';
 
     }
 
@@ -66,7 +66,7 @@ class Tpv
             throw new TpvException('Please add value');
         }
 
-        $this->_setParameters['DS_MERCHANT_IDENTIFIER'] = $value;
+        $this->parameters['DS_MERCHANT_IDENTIFIER'] = $value;
 
         return $this;
     }
@@ -83,7 +83,7 @@ class Tpv
             throw new TpvException('Please set true or false');
         }
 
-        $this->_setParameters['DS_MERCHANT_DIRECTPAYMENT'] = $flat;
+        $this->parameters['DS_MERCHANT_DIRECTPAYMENT'] = $flat;
 
         return $this;
     }
@@ -105,7 +105,7 @@ class Tpv
         $amount = $this->convertNumber($amount);
         $amount = intval(strval($amount * 100));
 
-        $this->_setParameters['DS_MERCHANT_AMOUNT'] = $amount;
+        $this->parameters['DS_MERCHANT_AMOUNT'] = $amount;
 
         return $this;
     }
@@ -125,7 +125,7 @@ class Tpv
             throw new TpvException('Order id must be a 4 digit string at least, maximum 12 characters.');
         }
 
-        $this->_setParameters['DS_MERCHANT_ORDER'] = $order;
+        $this->parameters['DS_MERCHANT_ORDER'] = $order;
 
         return $this;
     }
@@ -137,7 +137,7 @@ class Tpv
      */
     public function getOrder()
     {
-        return $this->_setParameters['DS_MERCHANT_ORDER'];
+        return $this->parameters['DS_MERCHANT_ORDER'];
     }
 
     /**
@@ -173,7 +173,7 @@ class Tpv
             throw new TpvException('Please add Fuc');
         }
 
-        $this->_setParameters['DS_MERCHANT_MERCHANTCODE'] = $fuc;
+        $this->parameters['DS_MERCHANT_MERCHANTCODE'] = $fuc;
 
         return $this;
     }
@@ -192,7 +192,7 @@ class Tpv
             throw new TpvException('Currency is not valid');
         }
 
-        $this->_setParameters['DS_MERCHANT_CURRENCY'] = $currency;
+        $this->parameters['DS_MERCHANT_CURRENCY'] = $currency;
 
         return $this;
     }
@@ -211,7 +211,7 @@ class Tpv
             throw new TpvException('Please add transaction type');
         }
 
-        $this->_setParameters['DS_MERCHANT_TRANSACTIONTYPE'] = $transaction;
+        $this->parameters['DS_MERCHANT_TRANSACTIONTYPE'] = $transaction;
 
         return $this;
     }
@@ -230,7 +230,7 @@ class Tpv
             throw new TpvException('Terminal is not valid.');
         }
 
-        $this->_setParameters['DS_MERCHANT_TERMINAL'] = $terminal;
+        $this->parameters['DS_MERCHANT_TERMINAL'] = $terminal;
 
         return $this;
     }
@@ -243,7 +243,7 @@ class Tpv
      */
     public function setNotification($url = '')
     {
-        $this->_setParameters['DS_MERCHANT_MERCHANTURL'] = $url;
+        $this->parameters['DS_MERCHANT_MERCHANTURL'] = $url;
 
         return $this;
     }
@@ -256,7 +256,7 @@ class Tpv
      */
     public function setUrlOk($url = '')
     {
-        $this->_setParameters['DS_MERCHANT_URLOK'] = $url;
+        $this->parameters['DS_MERCHANT_URLOK'] = $url;
 
         return $this;
     }
@@ -269,7 +269,7 @@ class Tpv
      */
     public function setUrlKo($url = '')
     {
-        $this->_setParameters['DS_MERCHANT_URLKO'] = $url;
+        $this->parameters['DS_MERCHANT_URLKO'] = $url;
 
         return $this;
     }
@@ -284,7 +284,7 @@ class Tpv
         if ($this->isEmpty($version)) {
             throw new TpvException('Please add version.');
         }
-        $this->_setVersion = $version;
+        $this->version = $version;
 
         return $this;
     }
@@ -297,7 +297,7 @@ class Tpv
     public function generateMerchantParameters()
     {
         //Convert Array to Json
-        $json = $this->arrayToJson($this->_setParameters);
+        $json = $this->arrayToJson($this->parameters);
 
         //Return Json to Base64
         return $this->encodeBase64($json);
@@ -317,7 +317,7 @@ class Tpv
         $merchant_parameter = $this->generateMerchantParameters();
 
         // Get key with Order and key based on version
-        switch ($this->_setVersion) {
+        switch ($this->version) {
             case 'HMAC_SHA512_V2':
                 $key = $this->encrypt_AES($this->getOrder(), $key);
                 // Generated Hmac512 of Merchant Parameter
@@ -353,7 +353,7 @@ class Tpv
         $order = $this->getOrderNotification($parameters);
 
         // Get key with Order and key based on version
-        switch ($this->_setVersion) {
+        switch ($this->version) {
             case 'HMAC_SHA512_V2':
                 $key = $this->encrypt_AES($order, $key);
                 // Generated Hmac512 of Merchant Parameter
@@ -378,7 +378,7 @@ class Tpv
      */
     public function setMerchantSignature($signature)
     {
-        $this->_setSignature = $signature;
+        $this->signature = $signature;
 
         return $this;
     }
@@ -396,38 +396,38 @@ class Tpv
         $environment = trim($environment);
         if ($environment === 'live') {
             //Live
-            $this->_setEnvironment = 'https://sis.redsys.es/sis/realizarPago';
+            $this->environment = 'https://sis.redsys.es/sis/realizarPago';
         } elseif ($environment === 'test') {
             //Test
-            $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/realizarPago';
+            $this->environment = 'https://sis-t.redsys.es:25443/sis/realizarPago';
         } elseif ($environment === 'restLive' || $environment === 'manageRequestRestLive') {
             //Rest Live
-            $this->_setEnvironment = 'https://sis.redsys.es/sis/rest/trataPeticionREST';
+            $this->environment = 'https://sis.redsys.es/sis/rest/trataPeticionREST';
         } elseif ($environment === 'restTest' || $environment === 'manageRequestRestTest' ) {
             //Rest Test
-            $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST';
+            $this->environment = 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST';
         } elseif ($environment === 'startRequestRestLive') {
             //Start request
-            $this->_setEnvironment = 'https://sis.redsys.es/sis/rest/iniciaPeticionREST';
+            $this->environment = 'https://sis.redsys.es/sis/rest/iniciaPeticionREST';
         } elseif ($environment === 'startRequestRestTest') {
             //Start request test
-            $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST';
+            $this->environment = 'https://sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST';
         } elseif ($environment === 'insiteSandbox') {
             //InSite Sandbox - JS URL
-            $this->_setInSiteJsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
-            $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST';
+            $this->inSiteJsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
+            $this->environment = 'https://sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST';
         } elseif ($environment === 'insiteLive') {
             //InSite Live - JS URL
-            $this->_setInSiteJsUrl = 'https://sis.redsys.es/sis/NC/redsysV3.js';
-            $this->_setEnvironment = 'https://sis.redsys.es/sis/rest/iniciaPeticionREST';
+            $this->inSiteJsUrl = 'https://sis.redsys.es/sis/NC/redsysV3.js';
+            $this->environment = 'https://sis.redsys.es/sis/rest/iniciaPeticionREST';
         } elseif ($environment === 'insiteRestSandbox') {
             //InSite REST Sandbox (for sendInSite)
-            $this->_setInSiteJsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
-            $this->_setEnvironment = 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST';
+            $this->inSiteJsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
+            $this->environment = 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST';
         } elseif ($environment === 'insiteRestLive') {
             //InSite REST Live (for sendInSite)
-            $this->_setInSiteJsUrl = 'https://sis.redsys.es/sis/NC/redsysV3.js';
-            $this->_setEnvironment = 'https://sis.redsys.es/sis/rest/trataPeticionREST';
+            $this->inSiteJsUrl = 'https://sis.redsys.es/sis/NC/redsysV3.js';
+            $this->environment = 'https://sis.redsys.es/sis/rest/trataPeticionREST';
         } else {
             throw new TpvException('Add test or live');
         }
@@ -451,7 +451,7 @@ class Tpv
             throw new TpvException('Add language code');
         }
 
-        $this->_setParameters['DS_MERCHANT_CONSUMERLANGUAGE'] = trim($languageCode);
+        $this->parameters['DS_MERCHANT_CONSUMERLANGUAGE'] = trim($languageCode);
 
         return $this;
     }
@@ -463,7 +463,7 @@ class Tpv
      */
     public function getEnvironment()
     {
-        return $this->_setEnvironment;
+        return $this->environment;
     }
 
     /**
@@ -511,7 +511,7 @@ class Tpv
             throw new TpvException('Add merchant data');
         }
 
-        $this->_setParameters['DS_MERCHANT_MERCHANTDATA'] = trim($merchantdata);
+        $this->parameters['DS_MERCHANT_MERCHANTDATA'] = trim($merchantdata);
 
         return $this;
     }
@@ -530,7 +530,7 @@ class Tpv
             throw new TpvException('Add product description');
         }
 
-        $this->_setParameters['DS_MERCHANT_PRODUCTDESCRIPTION'] = trim($description);
+        $this->parameters['DS_MERCHANT_PRODUCTDESCRIPTION'] = trim($description);
 
         return $this;
     }
@@ -549,7 +549,7 @@ class Tpv
             throw new TpvException('Add name for the user');
         }
 
-        $this->_setParameters['DS_MERCHANT_TITULAR'] = trim($titular);
+        $this->parameters['DS_MERCHANT_TITULAR'] = trim($titular);
 
         return $this;
     }
@@ -568,7 +568,7 @@ class Tpv
             throw new TpvException('Add name for Trade name');
         }
 
-        $this->_setParameters['DS_MERCHANT_MERCHANTNAME'] = trim($tradename);
+        $this->parameters['DS_MERCHANT_MERCHANTNAME'] = trim($tradename);
 
         return $this;
     }
@@ -600,7 +600,7 @@ class Tpv
             throw new TpvException('Pay method is not valid');
         }
 
-        $this->_setParameters['DS_MERCHANT_PAYMETHODS'] = trim($method);
+        $this->parameters['DS_MERCHANT_PAYMETHODS'] = trim($method);
 
         return $this;
     }
@@ -619,7 +619,7 @@ class Tpv
             throw new TpvException('Pan not valid');
         }
 
-        $this->_setParameters['DS_MERCHANT_PAN'] = $pan;
+        $this->parameters['DS_MERCHANT_PAN'] = $pan;
 
         return $this;
     }
@@ -638,7 +638,7 @@ class Tpv
         if ( !$this->isExpiryDate($expirydate) ) {
             throw new TpvException('Expire date is not valid');
         }
-        $this->_setParameters['DS_MERCHANT_EXPIRYDATE'] = $expirydate;
+        $this->parameters['DS_MERCHANT_EXPIRYDATE'] = $expirydate;
         return $this;
 
     }
@@ -664,7 +664,7 @@ class Tpv
         }
 
         $parameters = array_change_key_case($parameters, CASE_UPPER);
-        $this->_setParameters = array_merge($this->_setParameters, $parameters);
+        $this->parameters = array_merge($this->parameters, $parameters);
         return $this;
     }
 
@@ -682,7 +682,7 @@ class Tpv
             throw new TpvException('CVV2 is not valid');
         }
 
-        $this->_setParameters['DS_MERCHANT_CVV2'] = $cvv2;
+        $this->parameters['DS_MERCHANT_CVV2'] = $cvv2;
 
         return $this;
     }
@@ -695,7 +695,7 @@ class Tpv
      */
     public function setNameForm($name = 'servired_form')
     {
-        $this->_setNameForm = $name;
+        $this->nameForm = $name;
 
         return $this;
     }
@@ -707,7 +707,7 @@ class Tpv
      */
     public function getNameForm()
     {
-        return $this->_setNameForm;
+        return $this->nameForm;
     }
 
     /**
@@ -718,7 +718,7 @@ class Tpv
      */
     public function setIdForm($id = 'servired_form')
     {
-        $this->_setIdForm = $id;
+        $this->idForm = $id;
 
         return $this;
     }
@@ -740,11 +740,11 @@ class Tpv
         $style = '',
         $cssClass = ''
     ) {
-        $this->_setNameSubmit = $name;
-        $this->_setIdSubmit = $id;
-        $this->_setValueSubmit = $value;
-        $this->_setStyleSubmit = $style;
-        $this->_setClassSubmit = $cssClass;
+        $this->nameSubmit = $name;
+        $this->idSubmit = $id;
+        $this->valueSubmit = $value;
+        $this->styleSubmit = $style;
+        $this->classSubmit = $cssClass;
 
         return $this;
     }
@@ -757,7 +757,7 @@ class Tpv
     public function executeRedirection($return = false)
     {
         $html = $this->createForm();
-        $html .= '<script>document.forms["'.$this->_setNameForm.'"].submit();</script>';
+        $html .= '<script>document.forms["'.$this->nameForm.'"].submit();</script>';
 
         if (!$return) {
             echo $html;
@@ -776,11 +776,11 @@ class Tpv
     public function createForm()
     {
         $form = '
-            <form action="'.$this->_setEnvironment.'" method="post" id="'.$this->_setIdForm.'" name="'.$this->_setNameForm.'" >
+            <form action="'.$this->environment.'" method="post" id="'.$this->idForm.'" name="'.$this->nameForm.'" >
                 <input type="hidden" name="Ds_MerchantParameters" value="'.$this->generateMerchantParameters().'"/>
-                <input type="hidden" name="Ds_Signature" value="'.$this->_setSignature.'"/>
-                <input type="hidden" name="Ds_SignatureVersion" value="'.$this->_setVersion.'"/>
-                <input type="submit" name="'.$this->_setNameSubmit.'" id="'.$this->_setIdSubmit.'" value="'.$this->_setValueSubmit.'" '.($this->_setStyleSubmit != '' ? ' style="'.$this->_setStyleSubmit.'"' : '').' '.($this->_setClassSubmit != '' ? ' class="'.$this->_setClassSubmit.'"' : '').'>
+                <input type="hidden" name="Ds_Signature" value="'.$this->signature.'"/>
+                <input type="hidden" name="Ds_SignatureVersion" value="'.$this->version.'"/>
+                <input type="submit" name="'.$this->nameSubmit.'" id="'.$this->idSubmit.'" value="'.$this->valueSubmit.'" '.($this->styleSubmit != '' ? ' style="'.$this->styleSubmit.'"' : '').' '.($this->classSubmit != '' ? ' class="'.$this->classSubmit.'"' : '').'>
             </form>
         ';
 
@@ -793,14 +793,14 @@ class Tpv
     public function send()
     {
         $data['Ds_MerchantParameters'] = $this->generateMerchantParameters();
-        $data['Ds_Signature'] = $this->_setSignature;
-        $data['Ds_SignatureVersion'] = $this->_setVersion;
+        $data['Ds_Signature'] = $this->signature;
+        $data['Ds_SignatureVersion'] = $this->version;
 
         $jsonCode = json_encode($data);
 
         $rest = curl_init ();
         curl_setopt ($rest, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt ( $rest, CURLOPT_URL, $this->_setEnvironment );
+        curl_setopt ( $rest, CURLOPT_URL, $this->environment );
         curl_setopt ( $rest, CURLOPT_CONNECTTIMEOUT, self::TIMEOUT );
         curl_setopt ( $rest, CURLOPT_TIMEOUT, self::READ_TIMEOUT );
         curl_setopt ( $rest, CURLOPT_RETURNTRANSFER, true );
@@ -869,7 +869,7 @@ class Tpv
      */
     public function getParameters()
     {
-        return $this->_setParameters;
+        return $this->parameters;
     }
 
     /**
@@ -879,7 +879,7 @@ class Tpv
      */
     public function getVersion()
     {
-        return $this->_setVersion;
+        return $this->version;
     }
 
     /**
@@ -889,7 +889,7 @@ class Tpv
      */
     public function getMerchantSignature()
     {
-        return $this->_setSignature;
+        return $this->signature;
     }
 
     /**
@@ -911,7 +911,7 @@ class Tpv
         if (!in_array($value, $validOptions, true)) {
             throw new TpvException('Set Merchant COF INI valid options');
         }
-        $this->_setParameters['DS_MERCHANT_COF_INI'] = $value;
+        $this->parameters['DS_MERCHANT_COF_INI'] = $value;
 
         return $this;
     }
@@ -934,7 +934,7 @@ class Tpv
         if (!in_array($value, $validOptions, true)) {
             throw new TpvException('Set Merchant COF type');
         }
-        $this->_setParameters['DS_MERCHANT_COF_TYPE'] = $value;
+        $this->parameters['DS_MERCHANT_COF_TYPE'] = $value;
 
         return $this;
     }
@@ -959,7 +959,7 @@ class Tpv
         if (!in_array($value, $validOptions, true)) {
             throw new TpvException('Set any of the Merchant Excep SCA valid options');
         }
-        $this->_setParameters['DS_MERCHANT_EXCEP_SCA'] = $value;
+        $this->parameters['DS_MERCHANT_EXCEP_SCA'] = $value;
 
         return $this;
     }
@@ -976,7 +976,7 @@ class Tpv
     public function setMerchantCofTxnid($txid)
     {
         if($txid) {
-        $this->_setParameters['DS_MERCHANT_COF_TXNID'] = $txid;
+        $this->parameters['DS_MERCHANT_COF_TXNID'] = $txid;
         }
         return $this;
     }
@@ -1229,7 +1229,7 @@ class Tpv
      */
     public function setInSite(bool $enabled = true)
     {
-        $this->_setInSiteMode = $enabled;
+        $this->inSiteMode = $enabled;
 
         return $this;
     }
@@ -1241,7 +1241,7 @@ class Tpv
      */
     public function getInSiteMode(): bool
     {
-        return $this->_setInSiteMode;
+        return $this->inSiteMode;
     }
 
     /**
@@ -1251,7 +1251,7 @@ class Tpv
      */
     public function getInSiteJsUrl(): string
     {
-        return $this->_setInSiteJsUrl;
+        return $this->inSiteJsUrl;
     }
 
     /**
@@ -1286,24 +1286,24 @@ class Tpv
         string $insiteStyle = 'inline'
     ): string {
         // Validate required parameters
-        if (!isset($this->_setParameters['DS_MERCHANT_MERCHANTCODE'])) {
+        if (!isset($this->parameters['DS_MERCHANT_MERCHANTCODE'])) {
             throw new TpvException('Merchant code (FUC) is required for InSite');
         }
-        if (!isset($this->_setParameters['DS_MERCHANT_TERMINAL'])) {
+        if (!isset($this->parameters['DS_MERCHANT_TERMINAL'])) {
             throw new TpvException('Terminal is required for InSite');
         }
-        if (!isset($this->_setParameters['DS_MERCHANT_ORDER'])) {
+        if (!isset($this->parameters['DS_MERCHANT_ORDER'])) {
             throw new TpvException('Order is required for InSite');
         }
 
-        $jsUrl = $this->_setInSiteJsUrl;
+        $jsUrl = $this->inSiteJsUrl;
         if (empty($jsUrl)) {
             $jsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
         }
 
-        $fuc = $this->_setParameters['DS_MERCHANT_MERCHANTCODE'];
-        $terminal = $this->_setParameters['DS_MERCHANT_TERMINAL'];
-        $order = $this->_setParameters['DS_MERCHANT_ORDER'];
+        $fuc = $this->parameters['DS_MERCHANT_MERCHANTCODE'];
+        $terminal = $this->parameters['DS_MERCHANT_TERMINAL'];
+        $order = $this->parameters['DS_MERCHANT_ORDER'];
 
         // Build the getInSiteForm JavaScript call
         $showLogoJs = $showLogo ? 'true' : 'false';
@@ -1386,7 +1386,7 @@ window.onload = loadRedsysForm;
             throw new TpvException('Order is required for InSite');
         }
 
-        $jsUrl = $this->_setInSiteJsUrl;
+        $jsUrl = $this->inSiteJsUrl;
         if (empty($jsUrl)) {
             $jsUrl = 'https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js';
         }
@@ -1469,7 +1469,7 @@ window.onload = loadRedsysForm;
         }
 
         // Set the operation ID instead of card data
-        $this->_setParameters['DS_MERCHANT_IDOPER'] = $idOper;
+        $this->parameters['DS_MERCHANT_IDOPER'] = $idOper;
 
         // Generate signature for the request
         $this->generateMerchantSignature($key);
