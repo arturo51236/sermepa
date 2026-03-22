@@ -37,7 +37,7 @@ class Tpv
         $this->setEnvironment();
 
         $this->parameters = array();
-        $this->version = 'HMAC_SHA256_V1';
+        $this->version = 'HMAC_SHA512_V2';
         $this->nameForm = 'redsys_form';
         $this->idForm = 'redsys_form';
         $this->nameSubmit = 'btn_submit';
@@ -318,16 +318,16 @@ class Tpv
 
         // Get key with Order and key based on version
         switch ($this->version) {
-            case 'HMAC_SHA512_V2':
-                $key = $this->encrypt_AES($this->getOrder(), $key);
-                // Generated Hmac512 of Merchant Parameter
-                $result = $this->hmac512($merchant_parameter, $key);
-                break;
             case 'HMAC_SHA256_V1':
-            default:
                 $key = $this->encrypt_3DES($this->getOrder(), $key);
                 // Generated Hmac256 of Merchant Parameter
                 $result = $this->hmac256($merchant_parameter, $key);
+                break;
+            case 'HMAC_SHA512_V2':
+            default:
+                $key = $this->encrypt_AES($this->getOrder(), $key);
+                // Generated Hmac512 of Merchant Parameter
+                $result = $this->hmac512($merchant_parameter, $key);
                 break;
         }
 
@@ -354,16 +354,16 @@ class Tpv
 
         // Get key with Order and key based on version
         switch ($this->version) {
-            case 'HMAC_SHA512_V2':
-                $key = $this->encrypt_AES($order, $key);
-                // Generated Hmac512 of Merchant Parameter
-                $result = $this->hmac512($data, $key);
-                break;
             case 'HMAC_SHA256_V1':
-            default:
                 $key = $this->encrypt_3DES($order, $key);
                 // Generated Hmac256 of Merchant Parameter
                 $result = $this->hmac256($data, $key);
+                break;
+            case 'HMAC_SHA512_V2':
+            default:
+                $key = $this->encrypt_AES($order, $key);
+                // Generated Hmac512 of Merchant Parameter
+                $result = $this->hmac512($data, $key);
                 break;
         }
 
