@@ -643,8 +643,7 @@ $redsys->setDateFrecuency(30);             // Frecuencia en días
 Algunos bancos requieren parámetros adicionales:
 
 ```php
-$parameters = ['DS_MERCHANT_EXCEP_SCA' => 'MIT'];
-$redsys->setParameters($parameters);
+$redsys->setMerchantExcepSca('MIT');
 ```
 
 ## Ejemplos Completos

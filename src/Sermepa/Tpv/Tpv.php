@@ -1026,6 +1026,31 @@ class Tpv
     }
 
     /**
+     * Para startRequestRestLive, startRequestRestTest, insiteLive, insiteSandbox: 
+     * "Y" o "N" para comprobar las exenciones compatibles con la tarjeta.
+     * 
+     * Para restLive, restTest, insiteRestLive, insiteRestSandbox: 
+     * "MIT", "LWV", "TRA", "COR" y "ATD".
+     * 
+     * Requiere activación por parte de la entidad.
+     *
+     * @return $this
+     * @throws TpvException
+     */
+    public function setMerchantExcepSca($value)
+    {
+        $validOptions = ['Y', 'N', 'MIT', 'LWV', 'TRA', 'COR', 'ATD'];
+        $value = strtoupper($value);
+
+        if (!in_array($value, $validOptions, true)) {
+            throw new TpvException('Set any of the Merchant Excep SCA valid options');
+        }
+        $this->_setParameters['DS_MERCHANT_EXCEP_SCA'] = $value;
+
+        return $this;
+    }
+
+    /**
      * COF identifier identifier. Optional. This
      * identifier is returned in the answer of the first
      * COF (store credentials) operation and
