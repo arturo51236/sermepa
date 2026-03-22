@@ -436,19 +436,6 @@ class Tpv
     }
 
     /**
-     * @param string $environment
-     * @throws TpvException
-     * @deprecated Use `setEnvironment`
-     * @return $this
-     */
-    public function setEnviroment($environment = 'test')
-    {
-        $this->setEnvironment($environment);
-
-        return $this;
-    }
-
-    /**
      * Set language code by default 001 = Spanish
      *
      * @param string $languageCode Language code [Castellano-001, Inglés-002, Catalán-003, Francés-004, Alemán-005,
@@ -467,16 +454,6 @@ class Tpv
         $this->_setParameters['DS_MERCHANT_CONSUMERLANGUAGE'] = trim($languageCode);
 
         return $this;
-    }
-
-    /**
-     * Return environment
-     * @deprecated Use `getEnvironment`
-     * @return string Url of environment
-     */
-    public function getEnviroment()
-    {
-        return $this->getEnvironment();
     }
 
     /**
