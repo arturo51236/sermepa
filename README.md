@@ -633,9 +633,6 @@ Los códigos ISO 4217. Los más comunes:
 $redsys->setMerchantCofIni('S');           // Inicio de COF
 $redsys->setMerchantCofType('R');          // Tipo: R=Recurrente, I=Cuotas
 $redsys->setMerchantCofTxnid('123456789'); // ID de transacción
-$redsys->setSumtotal(50000);               // Importe total
-$redsys->setChargeExpiryDate('2025-12-31'); // Fecha expiración
-$redsys->setDateFrecuency(30);             // Frecuencia en días
 ```
 
 ### Excepción SCA (Strong Customer Authentication)

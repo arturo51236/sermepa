@@ -111,69 +111,6 @@ class Tpv
     }
 
     /**
-     * Set Sum total (required for recurring payment)
-     *
-     * @param $sumTotal
-     *
-     * @return $this
-     * @throws TpvException
-     */
-    public function setSumtotal($sumTotal)
-    {
-        if ($sumTotal < 0) {
-            throw new TpvException('Sum total must be greater than or equal to 0.');
-        }
-
-        $sumTotal = $this->convertNumber($sumTotal);
-        $sumTotal = intval(strval($sumTotal * 100));
-
-        $this->_setParameters['DS_MERCHANT_SUMTOTAL'] = $sumTotal;
-
-        return $this;
-    }
-
-
-    /**
-     * Set Charge expiry date (required for recurring payment)
-     *
-     * @param $date
-     *
-     * @return $this
-     * @throws TpvException
-     */
-    public function setChargeExpiryDate($date)
-    {
-        if ( ! $this->isValidDate($date) ) {
-            throw new TpvException('Date is not valid.');
-        }
-
-        $this->_setParameters['DS_MERCHANT_CHARGEEXPIRYDATE'] = $date;
-
-        return $this;
-    }
-
-    /**
-     * Set Date frecuency (required for recurring payment)
-     *
-     * @param $dateFrecuency
-     *
-     * @return $this
-     * @throws TpvException
-     */
-    public function setDateFrecuency($dateFrecuency)
-    {
-        if ( !is_numeric($dateFrecuency) || (strlen($dateFrecuency) < 1 || strlen($dateFrecuency) > 5) ) {
-            throw new TpvException('Date frecuency is not valid.');
-        }
-
-        $this->_setParameters['DS_MERCHANT_DATEFRECUENCY'] = $dateFrecuency;
-
-        return $this;
-    }
-
-
-
-    /**
      * Set Order number - [The first 4 digits must be numeric.] (required)
      *
      * @param $order
