@@ -804,8 +804,8 @@ class Tpv
         curl_setopt ( $rest, CURLOPT_CONNECTTIMEOUT, self::TIMEOUT );
         curl_setopt ( $rest, CURLOPT_TIMEOUT, self::READ_TIMEOUT );
         curl_setopt ( $rest, CURLOPT_RETURNTRANSFER, true );
-        curl_setopt ( $rest, CURLOPT_SSL_VERIFYHOST, 0 );
-        curl_setopt ( $rest, CURLOPT_SSL_VERIFYPEER, 0 );
+        curl_setopt ( $rest, CURLOPT_SSL_VERIFYHOST, 2 );
+        curl_setopt ( $rest, CURLOPT_SSL_VERIFYPEER, true );
         curl_setopt ( $rest, CURLOPT_SSLVERSION, self::SSLVERSION_TLSv1_2 );
         curl_setopt ( $rest, CURLOPT_POST, true );
         curl_setopt ( $rest, CURLOPT_POSTFIELDS, $jsonCode );
