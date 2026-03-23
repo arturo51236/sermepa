@@ -983,6 +983,28 @@ class Tpv
     }
 
     /**
+     * Este campo contiene toda la información necesaria para autenticación EMV3DS (V1 o V2)
+     * Con el fin de mejorar la experiencia del usuario en el proceso de autenticación,
+     * se recomienda añadir en la petición de pago ciertos parámetros para obtener información de la tarjeta.
+     * 
+     * Doc: https://pagosonline.redsys.es/desarrolladores-inicio/integrate-con-nosotros/parametros-de-entrada-y-salida/ (véase tabla EMV3DS en la petición)
+     * 
+     * @param array $value
+     * @return $this
+     * @throws TpvException
+     */
+    public function setMerchantEmv3ds($value)
+    {
+        // Validar que por parámetro llega un array
+        if (!is_array($value)) {
+            throw new TpvException('Merchant EMV3DS must be an array');
+        }
+
+        $this->parameters['DS_MERCHANT_EMV3DS'] = $value;
+        return $this;
+    }
+
+    /**
      * Generates a Redsys order number following the recommended format.
      * The first 4 characters must be numeric, and the remaining characters must be alphanumeric.
      *
