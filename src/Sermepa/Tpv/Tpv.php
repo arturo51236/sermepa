@@ -798,30 +798,31 @@ class Tpv
 
         $jsonCode = json_encode($data);
 
-        $rest = curl_init ();
-        curl_setopt ($rest, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt ( $rest, CURLOPT_URL, $this->environment );
-        curl_setopt ( $rest, CURLOPT_CONNECTTIMEOUT, self::TIMEOUT );
-        curl_setopt ( $rest, CURLOPT_TIMEOUT, self::READ_TIMEOUT );
-        curl_setopt ( $rest, CURLOPT_RETURNTRANSFER, true );
-        curl_setopt ( $rest, CURLOPT_SSL_VERIFYHOST, 2 );
-        curl_setopt ( $rest, CURLOPT_SSL_VERIFYPEER, true );
-        curl_setopt ( $rest, CURLOPT_SSLVERSION, self::SSLVERSION_TLSv1_2 );
-        curl_setopt ( $rest, CURLOPT_POST, true );
-        curl_setopt ( $rest, CURLOPT_POSTFIELDS, $jsonCode );
+        $rest = curl_init();
+        curl_setopt_array($rest, [
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_URL => $this->environment,
+            CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+            CURLOPT_TIMEOUT => self::READ_TIMEOUT,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSLVERSION => self::SSLVERSION_TLSv1_2,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $jsonCode
+        ]);
 
-        $tmp = curl_exec ( $rest );
-        $httpCode=curl_getinfo($rest,CURLINFO_HTTP_CODE);
+        $tmp = curl_exec($rest);
+        $httpCode = curl_getinfo($rest, CURLINFO_HTTP_CODE);
 
-        if($tmp !== false && $httpCode==200){
-            $result=$tmp;
-        }
-        else{
-            $strError="Request failure ".(($httpCode!=200)?"[HttpCode: '".$httpCode."']":"").((curl_error($rest))?" [Error: '".curl_error($rest)."']":"");
+        if ($tmp !== false && $httpCode == 200) {
+            $result = $tmp;
+        } else {
+            $strError = "Request failure " . (($httpCode != 200) ? "[HttpCode: '" . $httpCode . "']" : "") . ((curl_error($rest)) ? " [Error: '" . curl_error($rest) . "']" : "");
             exit($strError);
         }
 
-        curl_close( $rest );
+        curl_close($rest);
 
         return $result;
     }
