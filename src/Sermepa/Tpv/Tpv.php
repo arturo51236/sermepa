@@ -300,7 +300,7 @@ class Tpv
         $json = $this->arrayToJson($this->parameters);
 
         //Return Json to Base64
-        return $this->encodeBase64($json);
+        return $this->base64_url_encode_safe($json);
     }
 
     /**
@@ -312,7 +312,7 @@ class Tpv
      */
     public function generateMerchantSignature($key)
     {
-        $key = $this->decodeBase64($key);
+        $key = base64_decode($key);
         //Generate Merchant Parameters
         $merchant_parameter = $this->generateMerchantParameters();
 
@@ -322,17 +322,14 @@ class Tpv
                 $key = $this->encrypt_3DES($this->getOrder(), $key);
                 // Generated Hmac256 of Merchant Parameter
                 $result = $this->hmac256($merchant_parameter, $key);
-                break;
+                return $this->base64_url_encode($result);
             case 'HMAC_SHA512_V2':
             default:
                 $key = $this->encrypt_AES($this->getOrder(), $key);
                 // Generated Hmac512 of Merchant Parameter
                 $result = $this->hmac512($merchant_parameter, $key);
-                break;
+                return $this->base64_url_encode_safe($result);
         }
-
-        // Base64 encoding
-        return $this->encodeBase64($result);
     }
 
     /**
@@ -345,7 +342,7 @@ class Tpv
      */
     public function generateMerchantSignatureNotification($key, $data)
     {
-        $key = $this->decodeBase64($key);
+        $key = base64_decode($key);
         // Decode data base64
         $decode = $this->base64_url_decode($data);
         // Los datos decodificados se pasan al array de datos
@@ -358,16 +355,14 @@ class Tpv
                 $key = $this->encrypt_3DES($order, $key);
                 // Generated Hmac256 of Merchant Parameter
                 $result = $this->hmac256($data, $key);
-                break;
+                return $this->base64_url_encode($result);
             case 'HMAC_SHA512_V2':
             default:
                 $key = $this->encrypt_AES($order, $key);
                 // Generated Hmac512 of Merchant Parameter
                 $result = $this->hmac512($data, $key);
-                break;
+                return $this->base64_url_encode_safe($result);
         }
-
-        return $this->base64_url_encode($result);
     }
 
     /**
@@ -1131,7 +1126,7 @@ class Tpv
         $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
         $fixed_key = str_pad(substr($key, 0, 16), 16, "0");
 
-        return $this->encodeBase64(openssl_encrypt($data, "AES-128-CBC", $fixed_key, OPENSSL_RAW_DATA, $iv));
+        return base64_encode(openssl_encrypt($data, "AES-128-CBC", $fixed_key, OPENSSL_RAW_DATA, $iv));
     }
 
     /**
@@ -1210,14 +1205,14 @@ class Tpv
     }
 
     /**
-     * @param string $data
+     * @param string $input
      *
      * @return string
      */
-    protected function encodeBase64($data)
+    protected function base64_url_encode_safe($input)
     {
-        return base64_encode($data);
-    }
+		return str_replace("=", "", strtr(base64_encode($input), '+/', '-_'));
+	}
 
     /**
      * @param string $input
@@ -1230,14 +1225,15 @@ class Tpv
     }
 
     /**
-     * @param string $data
+     * @param string $input
      *
      * @return string
      */
-    protected function decodeBase64($data)
+    protected function base64_url_decode_safe($input)
     {
-        return base64_decode($data);
-    }
+		$str = str_pad($input, strlen($input) + (4 - strlen($input) % 4) % 4, '=', STR_PAD_RIGHT);
+		return base64_decode(strtr($str, '-_', '+/'));
+	}
 
     // ******** END UTILS ********
 
