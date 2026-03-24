@@ -312,7 +312,6 @@ class Tpv
      */
     public function generateMerchantSignature($key)
     {
-        $key = base64_decode($key);
         //Generate Merchant Parameters
         $merchant_parameter = $this->generateMerchantParameters();
 
@@ -342,7 +341,6 @@ class Tpv
      */
     public function generateMerchantSignatureNotification($key, $data)
     {
-        $key = base64_decode($key);
         // Decode data base64
         $decode = $this->base64_url_decode($data);
         // Los datos decodificados se pasan al array de datos
